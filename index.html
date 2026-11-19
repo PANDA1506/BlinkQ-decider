@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>BlinQ Bill Estimator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#faf6f1;--card:#fff;--tx:#2b2420;--mu:#7a6e66;--ac:#a8793f;--bd:#e6dccf;--ok:#2e7d32;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17130f;--card:#241e18;--tx:#f1e9e0;--mu:#a99d92;--ac:#d4a566;--bd:#3a3128;--ok:#7bd88a;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;padding-bottom:40px}
+.w{max-width:760px;margin:auto;padding:14px}h1{font-size:22px;margin:4px 0}.s{color:var(--mu);font-size:13px;margin-bottom:10px}
+input{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;width:100%}
+.ch{display:flex;gap:6px;overflow-x:auto;padding:10px 0}.ch button{white-space:nowrap;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:20px;padding:6px 12px;font:inherit}
+.ch button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+h2{font-size:15px;color:var(--ac);margin:16px 0 6px}
+.it{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.it .n{flex:1}.it .p{color:var(--mu);font-size:13px}
+.q{display:flex;align-items:center;gap:8px}.q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--ac);background:none;color:var(--ac);font-size:18px}
+.q span{min-width:18px;text-align:center}
+.bill{background:var(--card);border:2px solid var(--ac);border-radius:14px;padding:14px;margin-top:18px}
+.r{display:flex;justify-content:space-between;padding:4px 0}.r.d{color:var(--ok)}.r.t{font-size:20px;font-weight:700;border-top:1px solid var(--bd);margin-top:6px;padding-top:10px}
+.set{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}.set label{font-size:12px;color:var(--mu)}
+.sm{font-size:12px;color:var(--mu)}.clr{background:none;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;margin-top:8px}
+</style></head><body><div class="w">
+<h1>🦋 BlinQ Bill Estimator</h1><div class="s">Premium Sky Cafe · tap + to add items</div>
+<input id="sr" placeholder="Search dish…" type="search">
+<div class="ch" id="ch"></div><div id="ls"></div>
+<div class="bill"><b>Your items</b><div id="sel" style="margin:8px 0 14px"></div><b>Your estimate</b>
+<div class="set"><div><label>GST %</label><input id="g" type="number" value="5" min="0"></div><div><label>Discount %</label><input id="d" type="number" value="30" min="0"></div><div><label>Flat off ₹</label><input id="f" type="number" value="300" min="0"></div></div>
+<div id="rows"></div>
+<button class="clr" id="cl">Clear all</button>
+<div class="sm" style="margin-top:8px">Order: subtotal → + GST → − % discount (on GST-inclusive total) → − flat amount. GST rate is editable; 5% is assumed.</div></div>
+</div>
+<script>
+const D=`Soup::Manchow Soup Veg|179;Manchow Soup Non-Veg|199;Hot & Sour Veg|179;Hot & Sour Non-Veg|199;Lemon Coriander Veg|179;Lemon Coriander Non-Veg|199;Sweet Corn Veg|179;Sweet Corn Non-Veg|199;Clear Soup Veg|179;Clear Soup Non-Veg|199;Tomato Basil Soup|199
+Chatar Patar::French Fries|199;Peri Peri Fries|219;Cheesy Fries|239;Peanut Masala|219;Peanut Chaat|229;Roasted Papad Masala|99;Fried Masala Papad|109;Chana Roast|229;Hummus Chaat|229;Palak Patta Chaat|229
+Indo China Veg::Chilli Paneer|329;Veg Manchurian|289;Honey Chilli Potato|289;Paneer 65|329;Corn Salt & Pepper|329;Chilli Mushroom|349;Veg Crispy|329;Tempura Fried Baby Corn|289;Veg Spring Roll|329;Peri Peri Corn|329;Veg Kothey|299;Black Bean Paneer|349;Basil Paneer|329;Pepper Paneer|329
+Indo China Non-Veg::Chilli Chicken|349;Chicken 65|349;Chicken Manchurian|349;Chilli Bean Chicken|349;Black Bean Chicken|349;Chicken Hot Garlic Sauce|349;Chilli Basil Chicken|349;Chicken Lolli Pop|379;Honey Glazed Chicken Wings|379;Pepper Chicken|349;Chilli Fish|419;Egg Chilli|329
+Pasta/Garlic Bread::Alfredo Penne|329;Arrabbiata Penne|329;Pesto Pasta|329;Pink Penne|329;Aglio Olio Spaghetti|349;Mac & Cheese|349;Classic Cheese Garlic Bread|229;Tomato Basil Mushroom|249;Farm Fresh Garlic Bread|249;Paneer Tikka Garlic Bread|249;Chicken Tikka Garlic Bread|269;Tomato Basil Chicken|269;Add Chicken|49
+Maggie::Masala Maggie|199;Cheese Maggie|219;Cheese Corn Maggie|229;Hot & Spicy Maggie|229;Punjabi Tadka Maggie|249;Add Chicken (Maggie)|49
+Sandwich::Paneer Cheese Sandwich|249;Aloo Cheese Sandwich|249;Chicken Cheese Sandwich|259
+Around the Globe::Veg Loaded Nachos|299;Cheese Nachos|329;Nachos with Salsa|299;Hummus Falafel Pita|349;Cheese Cigar Roll|329;Corn Cheese Cigar Roll|329;Paneer Tikka Cheese Cigar Roll|349;Jalapeno Cheese Cigar Roll|349;Mushroom Duplex|349;Cheese Balls|349;Saute Vegetable|349;Paneer Shushi Indian Style|399;Grilled Chicken & Saute Veg|499;Grilled Fish & Saute Veg|599;Chicken Majestic|379;Chicken Tapena|429;Fish & Chips|429;Fish Finger|429;Fish Tawa Fry|429;Fish Amritsari Fry|429;Fish Tapena|529
+Slider/Kebab::Vada Pao Slider|249;Chicken Tikka Slider|299;Hara Bhara Kebab|329;Veg Seekh Kebab|349;Dahi Kebab|349;Corn Cheese Kebab|349;Paneer Bullet Kebab|349;Mutton Seekh Kebab|499;Mutton Shami Kebab|499
+Pizza::Margherita|449;Paneer Tikka Pizza|499;Farm House Pizza|499;Mushroom & Corn Pizza|499;Chicken Tikka Pizza|549;Smoked Chicken Pizza|549;BlinQ Special Pizza|599;Make Your Own Pizza|649
+Tandoor::Paneer Tikka|349;Paneer Malai Tikka|379;Tandoori Broccoli|379;Malai Broccoli|399;Achari Paneer Tikka|349;Angara Paneer Tikka|349;Classic Soya Chaap|349;Achari Soya Chaap|349;Malai Soya Chaap|379;Mushroom Tikka|399;Chicken Tikka|379;Chicken Malai Tikka|399;Chicken Achari Tikka|379;Tandoori Chicken|379;Fish Tikka|549;Fish Malai Tikka|549
+Chinese Mains/Rice::Fried Rice Veg|289;Fried Rice Egg|299;Fried Rice Chicken|329;Noodles Veg|299;Noodles Chicken|329;Veg Biryani|349;Chicken Biryani|399;Plain Rice|199;Jeera Rice|229;Onion Mint Rice|249;Veg Pulao|249;Butter Khichdi|299
+Platters::Veg Chinese Platter|749;Non-Veg Chinese Platter|849;Veg Tandoor Platter|799;Non-Veg Tandoor Platter|999
+Indian Mains::Dal Lahsuni Tadka|259;Dal Makhani|329;Dal Fry|249;Butter Paneer Masala|349;Kadhai Paneer|349;Mattar Paneer|349;Paneer Tikka Masala|389;Paneer Lababdar|389;Shahi Paneer|389;Paneer Hyderabadi|389;Mushroom Masala|389;Kaju Curry|449;Palak Paneer|389;Diwani Handi|349;Veg Kolhapuri|349;Mushroom Mutter|379;Soya Chaap Masala|379;Hyderabadi Soya Chaap|379
+Non-Veg Mains::Butter Chicken|449;Kadhai Chicken|449;Chicken Rara|449;Chicken Tikka Masala|449;Chicken Gharwala|449;Chicken Bhunna|449;Fish Tawa Masala|449;Fish Hyderabadi|449;Mutton Bhuna|549;Mutton Do Pyaza|549;Mutton Curry|549;Mutton Tawa Masala|549;Egg Curry|229;Egg Masala|249
+Breads::Tandoori Roti Plain|30;Tandoori Roti Butter|40;Naan Plain|60;Naan Butter|70;Garlic Naan Plain|70;Garlic Naan Butter|80;Cheese Garlic Naan|90;Stuffed Paratha|120;Laccha Paratha|50;Bread Basket|300
+Dessert::Gulab Jamun|99;Gulab Jamun with Vanilla Ice Cream|179;Brownie with Ice Cream|199;Brownie|149
+Beverages::Mineral Water|30;Soft Drink|70;Soda|80;Red Bull|220;Tonic Water|120;Cutting Chai|69;Hot Coffee|69;Black Coffee|59;Green Tea|99
+Mocktails::Fresh Lime Water|149;Fresh Lime Soda|179;Classic Mint Mojito|199;Peach Mojito|229;Mango Mojito|229;Strawberry Mojito|229;Blue Lagoon|229;Cuddle on the Beach|229;Spicy Guava Marry|229;Fruit Punch|229;Pina Colada|229;Spicy Mango Marry|229;Sweet Heart|229;Basil Cranberry Cooler|229
+Shakes::Cold Coffee|199;Strawberry Shake|229;Blackcurrant Shake|229;Chocolate Shake|229;Kit Kat Shake|229;Oreo Shake|229;Tropical Chocoberg|249;Tutti Frutti Shake|249;Oreo Blueberry Shake|249;Fruit Punch Shake|249;Rose Marry Shake|249;Nutella Shake|249;Chocolate Brownie Shake|249
+Sheesha::Sheesha Flavour of Choice|849;Ice Base|999;Fruit Base|1149;Turkish Flavour|1499;Sheesha with Ice Base (Live)|1799;BlinQ Special Sheesha|1999`;
+const M=D.split("\n").map(l=>{const[c,r]=l.split("::");return{c,i:r.split(";").map(x=>{const[n,p]=x.split("|");return{n,p:+p}})}});
+const Q={};let cat="All",term="";
+const $=id=>document.getElementById(id),fm=v=>"₹"+(Math.round(v*100)/100).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+function chips(){$("ch").innerHTML=["All",...M.map(m=>m.c)].map(c=>`<button class="${c==cat?"on":""}" data-c="${c}">${c}</button>`).join("")}
+function list(){let h="";M.forEach(m=>{if(cat!="All"&&cat!=m.c)return;const it=m.i.filter(x=>x.n.toLowerCase().includes(term));if(!it.length)return;h+=`<h2>${m.c}</h2>`+it.map(x=>{const k=m.c+"|"+x.n;return`<div class="it"><div class="n">${x.n}<div class="p">₹${x.p}</div></div><div class="q"><button data-k="${k}" data-p="${x.p}" data-s="-1">−</button><span id="q-${k.replace(/\W/g,"_")}">${Q[k]?Q[k].q:0}</span><button data-k="${k}" data-p="${x.p}" data-s="1">+</button></div></div>`}).join("")});$("ls").innerHTML=h||"<p class=s>No dishes found.</p>"}
+function bill(){const v=id=>Math.max(0,+$(id).value||0);let sub=0,cnt=0;const lines=[];for(const k in Q){const e=Q[k];if(e.q>0){sub+=e.q*e.p;cnt+=e.q}}
+const g=sub*v("g")/100,t=sub+g,dc=t*v("d")/100,a=t-dc,fl=Math.min(a,sub>0?v("f"):0),fin=a-fl;
+$("sel").innerHTML=Object.keys(Q).filter(k=>Q[k].q>0).map(k=>`<div class="r"><span>${k.split("|")[1]} × ${Q[k].q}</span><span>${fm(Q[k].q*Q[k].p)}</span></div>`).join("")||'<div class="sm">Nothing added yet.</div>';
+$("rows").innerHTML=`<div class="r"><span>Subtotal (${cnt} items)</span><span>${fm(sub)}</span></div><div class="r"><span>+ GST (${v("g")}%)</span><span>${fm(g)}</span></div><div class="r"><span>Total with GST</span><span>${fm(t)}</span></div><div class="r d"><span>− ${v("d")}% off</span><span>−${fm(dc)}</span></div><div class="r d"><span>− Flat discount</span><span>−${fm(fl)}</span></div><div class="r t"><span>Final bill</span><span>${fm(fin)}</span></div>`}
+document.addEventListener("click",e=>{const b=e.target;if(b.dataset.c){cat=b.dataset.c;chips();list()}else if(b.dataset.s){const k=b.dataset.k,e2=Q[k]||(Q[k]={q:0,p:+b.dataset.p});e2.q=Math.max(0,e2.q+ +b.dataset.s);const s=$("q-"+k.replace(/\W/g,"_"));if(s)s.textContent=e2.q;bill()}});
+$("sr").oninput=e=>{term=e.target.value.toLowerCase();list()};["g","d","f"].forEach(i=>$(i).oninput=bill);
+$("cl").onclick=()=>{for(const k in Q)delete Q[k];list();bill()};
+chips();list();bill();
+</script></body></html>
